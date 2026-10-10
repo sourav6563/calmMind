@@ -8,6 +8,8 @@ export function useColorScheme() {
   const [hasHydrated, setHasHydrated] = useState(false);
 
   useEffect(() => {
+    // Hydration flag for static rendering — must flip after mount by design.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional post-hydration sync
     setHasHydrated(true);
   }, []);
 

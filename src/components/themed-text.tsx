@@ -10,12 +10,26 @@ export type ThemedTextProps = TextProps & {
 
 export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
+  const flatStyle = StyleSheet.flatten(style);
+
+  const customFontSize = flatStyle?.fontSize;
+  const customLineHeight = flatStyle?.lineHeight;
+
+  // If a custom fontSize is passed without an explicit lineHeight, compute a generous
+  // proportional lineHeight so descenders ('g', 'y', 'p', 'q', 'j') and stems ('l') never clip.
+  const safeLineHeight =
+    customFontSize !== undefined && customLineHeight === undefined
+      ? Math.max(
+          Math.round(customFontSize * 1.3),
+          customFontSize + (customFontSize >= 24 ? 8 : 6)
+        )
+      : undefined;
 
   return (
     <Text
       style={[
         { color: theme[themeColor ?? 'text'] },
-        type === 'default' && styles.default,
+        type === 'default' && (customFontSize !== undefined ? styles.defaultBase : styles.default),
         type === 'title' && styles.title,
         type === 'small' && styles.small,
         type === 'smallBold' && styles.smallBold,
@@ -23,6 +37,7 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
         type === 'link' && styles.link,
         type === 'linkPrimary' && styles.linkPrimary,
         type === 'code' && styles.code,
+        safeLineHeight !== undefined && { lineHeight: safeLineHeight },
         style,
       ]}
       {...rest}
@@ -40,6 +55,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontWeight: 700,
+  },
+  defaultBase: {
+    fontWeight: 500,
   },
   default: {
     fontSize: 16,
@@ -63,7 +81,7 @@ const styles = StyleSheet.create({
   linkPrimary: {
     lineHeight: 30,
     fontSize: 14,
-    color: '#3c87f7',
+    color: '#9CB5C9',
   },
   code: {
     fontFamily: Fonts.mono,

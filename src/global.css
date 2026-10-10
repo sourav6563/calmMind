@@ -6,4 +6,32 @@
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
+
+  /* calmMind tokens — no pure black/white */
+  --color-bg: #f7f5f2;
+  --color-text: #1c1c1e;
+  --color-text-dim: #6b6b76;
+  --color-hairline: #e8e5e1;
+  --color-breath-primary: #4a90e2;
+  --color-breath-secondary: #00acc1;
+  --color-breath-glow: #e0f7fa;
+  --color-med-primary: #7c6ff0;
+  --color-med-secondary: #bf55ec;
+  --color-med-glow: #f0e6ff;
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #05070B;
+    --color-text: #E8EFF7;
+    --color-text-dim: #728FA7;
+    --color-hairline: rgba(156, 181, 201, 0.16);
+    --color-breath-primary: #44627D;
+    --color-breath-secondary: #728FA7;
+    --color-breath-glow: #9CB5C9;
+    --color-med-primary: #44627D;
+    --color-med-secondary: #728FA7;
+    --color-med-glow: #9CB5C9;
+  }
+}
+

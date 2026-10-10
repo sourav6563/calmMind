@@ -1,18 +1,44 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { Motion, Neutral } from '@/constants/theme';
 
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+const SpaceTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: Neutral.spaceBlack,
+    card: Neutral.spaceSurface,
+    border: Neutral.spaceHairline,
+    text: Neutral.moonlightWhite,
+  },
+};
+
+/**
+ * Root layout — Space Black theme with tabs group plus immersive session routes.
+ * Sessions fade in slowly (800ms) — a deliberate slow-down before practice begins.
+ */
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={SpaceTheme}>
+      <StatusBar style="light" />
       <AnimatedSplashOverlay />
-      <AppTabs />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Neutral.spaceBlack } }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="breathe/[technique]"
+          options={{ animation: 'fade', animationDuration: Motion.sessionEnter }}
+        />
+        <Stack.Screen
+          name="meditate/[practice]"
+          options={{ animation: 'fade', animationDuration: Motion.sessionEnter }}
+        />
+      </Stack>
     </ThemeProvider>
   );
 }
+
