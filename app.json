@@ -19,12 +19,23 @@
       },
       "predictiveBackGestureEnabled": false
     },
+    "androidStatusBar": {
+      "backgroundColor": "#00000000",
+      "barStyle": "dark-content",
+      "translucent": true
+    },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-status-bar",
+        {
+          "style": "dark"
+        }
+      ],
       [
         "expo-splash-screen",
         {

@@ -1,122 +1,58 @@
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TechniqueCard } from '@/components/technique-card';
-import { Screen } from '@/components/primitives/screen';
-import { SectionHeader } from '@/components/primitives/section-header';
-import { ThemedText } from '@/components/themed-text';
+import { PracticeRow } from '@/components/ui/practice-row';
 import { MEDITATIONS } from '@/constants/techniques';
-import { FontSize, FontWeight, Neutral, modePalette, Radius, Spacing } from '@/constants/theme';
-import { useColorSchemeName } from '@/hooks/use-color-scheme-name';
 
-/** Full Meditation practice catalog — opened via 'Explore all ›' from Home. */
-export default function MeditateScreen() {
-  const scheme = useColorSchemeName();
-  const palette = modePalette('meditate', scheme);
+export default function MeditateTabScreen() {
+  const insets = useSafeAreaInsets();
+
+  // Filter out any legacy alias for clean catalog display
+  const practices = MEDITATIONS.filter((m) => m.id !== 'focused-attention');
 
   return (
-    <Screen mode="meditate" style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.topNav}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Back to Home Sanctuary"
-            hitSlop={8}
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-            style={({ pressed }) => [
-              styles.backPill,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}>
-            <ThemedText style={[styles.backArrow, { color: palette.glow }]}>‹</ThemedText>
-            <ThemedText style={styles.backText}>Sanctuary</ThemedText>
-          </Pressable>
+    <View
+      className="flex-1 bg-zen-cream"
+      style={{ flex: 1, backgroundColor: '#F7F5EE' }}>
+      {/* ── Zen Header ─────────────────────────────────────────── */}
+      <View
+        className="px-6 pb-2"
+        style={{ paddingTop: insets.top + 16, paddingHorizontal: 24, paddingBottom: 12 }}>
+        <Text
+          className="text-zen-charcoal text-3xl font-semibold"
+          style={{ fontFamily: 'serif', fontSize: 32, fontWeight: '600', color: '#222522' }}>
+          Meditate
+        </Text>
+        <Text
+          className="text-zen-muted text-sm mt-1 font-medium"
+          style={{ color: '#6B7068', fontSize: 14, marginTop: 4 }}>
+          Find peace, presence, and stillness within
+        </Text>
+      </View>
 
-          <View
-            style={[
-              styles.countBadge,
-              { backgroundColor: `${palette.secondary}1A`, borderColor: `${palette.secondary}35` },
-            ]}>
-            <ThemedText style={[styles.countText, { color: palette.glow }]}>
-              {MEDITATIONS.length} sittings
-            </ThemedText>
-          </View>
-        </View>
-
-        <SectionHeader
-          title="Meditate"
-          subtitle="Pick a quiet practice for your state of mind. Settle in."
-        />
-
-        {MEDITATIONS.map((m) => (
-          <TechniqueCard
-            key={m.id}
-            name={m.name}
-            category={m.category}
-            subtitle={`${m.benefit} · ${m.durationDefault}m`}
-            icon={m.icon}
-            color={m.orbTint.core}
-            accentColor={m.orbTint.glow}
-            surfaceColor={Neutral.spaceGlass}
-            borderColor={Neutral.spaceHairline}
-            onPress={() => router.push(`/meditate/${m.id}`)}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 14,
+          paddingBottom: insets.bottom + 80,
+        }}>
+        {/* Meditation Cards */}
+        {practices.map((meditation) => (
+          <PracticeRow
+            key={meditation.id}
+            title={meditation.name}
+            durationText={`${meditation.durationDefault} min`}
+            icon={meditation.icon}
+            badgeColor={meditation.badgeColor}
+            onPress={() => {
+              router.push(`/meditate/${meditation.id}`);
+            }}
           />
         ))}
       </ScrollView>
-    </Screen>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 20,
-  },
-  content: {
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.six,
-    gap: Spacing.three,
-    maxWidth: 460,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  topNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  backArrow: {
-    fontSize: FontSize.lg,
-    lineHeight: 22,
-    fontWeight: FontWeight.light,
-  },
-  backText: {
-    fontSize: FontSize.xs,
-    lineHeight: 16,
-    paddingBottom: 1,
-    fontWeight: FontWeight.semibold,
-  },
-  countBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  countText: {
-    fontSize: FontSize.xs,
-    lineHeight: 16,
-    paddingBottom: 1,
-    fontWeight: FontWeight.semibold,
-  },
-});

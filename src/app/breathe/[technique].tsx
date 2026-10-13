@@ -1,446 +1,359 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
-import { Path, Rect, Svg } from 'react-native-svg';
+import { router, useLocalSearchParams } from "expo-router";
+import {
+    BookOpen,
+    ChevronDown,
+    ChevronUp,
+    Timer,
+    Volume2,
+} from "lucide-react-native";
+import React, { useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Button } from '@/components/primitives/button';
-import { Screen } from '@/components/primitives/screen';
-import { BreathingOrb } from '@/components/session/breathing-orb';
-import { PhaseLabel } from '@/components/session/phase-label';
-import { SessionComplete } from '@/components/session/session-complete';
-import { SessionIntro } from '@/components/session/session-intro';
-import { ThemedText } from '@/components/themed-text';
-import { getTechnique } from '@/constants/techniques';
-import { FontSize, FontWeight, Motion, Radius, Spacing, modePalette } from '@/constants/theme';
-import { useBreathPhase } from '@/hooks/use-breath-phase';
-import { useColorSchemeName } from '@/hooks/use-color-scheme-name';
-import { useControlsFade } from '@/hooks/use-controls-fade';
-import { useHaptics } from '@/hooks/use-haptics';
-import { saveRecentSession } from '@/utils/recent-sessions';
+import { BotanicalGlyph } from "@/components/icons/botanical-glyphs";
+import { BackArrowIcon } from "@/components/icons/ui-icons";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { getTechnique, TECHNIQUES } from "@/constants/techniques";
+import { useHaptics } from "@/hooks/use-haptics";
 
-/**
- * Breathing session — minimalist, gallery-calm stage.
- * Pure round 5-layer Obsidian + Aurora Teal orb is the sole focus.
- */
-const BREATH_ORB_SIZE = 276;
-
-export default function BreatheSessionScreen() {
-  const { technique: techniqueId } = useLocalSearchParams<{ technique: string }>();
-  const technique = getTechnique(techniqueId);
-  const scheme = useColorSchemeName();
-  const palette = useMemo(() => modePalette('breathe', scheme), [scheme]);
+export default function BreatheDetailScreen() {
+  const { technique: id } = useLocalSearchParams<{ technique: string }>();
+  const insets = useSafeAreaInsets();
   const haptics = useHaptics();
 
-  useEffect(() => {
-    if (technique?.id) {
-      void saveRecentSession(technique.id, 'breathe');
-    }
-  }, [technique?.id]);
+  const technique = getTechnique(id) ?? TECHNIQUES[0];
 
-  const [selectedCycles, setSelectedCycles] = useState(technique?.cyclesDefault ?? 0);
-  const [running, setRunning] = useState(false);
-  const [showComplete, setShowComplete] = useState(false);
-  const [elapsedSec, setElapsedSec] = useState(0);
-  const [showIntro, setShowIntro] = useState(true);
-  const startedAtRef = useRef(0);
+  // Core configurations
+  const [selectedCycles, setSelectedCycles] = useState<number>(
+    technique.cyclesDefault,
+  );
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [prepCountdown, setPrepCountdown] = useState<boolean>(true);
+  const [showInstructions, setShowInstructions] = useState<boolean>(false);
 
-  const totalCycles = selectedCycles;
-  const aurora = palette.secondary;
+  // Dynamic timing computation
+  const cycleSeconds = technique.phases.reduce((sum, p) => sum + p.seconds, 0);
+  const estMinutes =
+    selectedCycles === 0
+      ? null
+      : Math.max(1, Math.round((cycleSeconds * selectedCycles) / 60));
 
-  const handleEnd = () => {
-    setRunning(false);
-    setShowComplete(true);
-    haptics.done();
+  const handleStart = () => {
+    haptics.tick();
+    router.push({
+      pathname: "/breathe/session/[technique]",
+      params: {
+        technique: technique.id,
+        cycles: String(selectedCycles),
+        sound: soundEnabled ? "1" : "0",
+        prep: prepCountdown ? "1" : "0",
+      },
+    });
   };
 
-  const breath = useBreathPhase(technique?.phases ?? [], {
-    running,
-    cycles: totalCycles,
-    onEnd: handleEnd,
-  });
-
-  // Gentle tick on each phase boundary (eyes-closed usability).
-  const prevPhaseRef = useRef(-1);
-  useEffect(() => {
-    if (running && breath.phaseIndex !== prevPhaseRef.current) {
-      haptics.tick();
-      prevPhaseRef.current = breath.phaseIndex;
-    }
-  }, [breath.phaseIndex, running, haptics]);
-
-  // Session elapsed clock.
-  useEffect(() => {
-    if (running && startedAtRef.current === 0) {
-      startedAtRef.current = Date.now() - elapsedSec * 1000;
-    }
-    if (!running || showComplete) return;
-    const id = setInterval(() => {
-      setElapsedSec(Math.floor((Date.now() - startedAtRef.current) / 1000));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [running, showComplete, elapsedSec]);
-
-  // Controls auto-fade while running (calm: uncluttered session screen).
-  const { opacity: controlsOpacity, reveal: revealControls } = useControlsFade(running);
-
-  // Session entry — 800ms bloom-in.
-  const [enterOpacity] = useState(() => new Animated.Value(0));
-  useEffect(() => {
-    Animated.timing(enterOpacity, {
-      toValue: 1,
-      duration: Motion.sessionEnter,
-      useNativeDriver: true,
-    }).start();
-  }, [enterOpacity]);
-
-  if (!technique) {
-    return (
-      <Screen mode="breathe" style={styles.missing}>
-        <ThemedText type="subtitle">Technique not found</ThemedText>
-        <Button label="Go back" onPress={() => router.back()} />
-      </Screen>
-    );
-  }
-
-  const summaryMin = Math.floor(elapsedSec / 60);
-  const summarySec = elapsedSec % 60;
-
-  if (showIntro) {
-    return (
-      <Screen mode="breathe" edges={['top', 'bottom']} style={styles.container}>
-        <View style={styles.header}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-            onPress={() => {
-              haptics.tick();
-              router.back();
-            }}
-            hitSlop={8}
-            style={({ pressed }) => [
-              styles.backPill,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}>
-            <ThemedText style={[styles.backArrow, { color: palette.glow }]}>‹</ThemedText>
-            <ThemedText style={styles.backText}>Back</ThemedText>
-          </Pressable>
-        </View>
-        <SessionIntro
-          technique={technique}
-          palette={palette}
-          selectedCycles={selectedCycles}
-          onSelectCycles={setSelectedCycles}
-          onBegin={() => {
-            setShowIntro(false);
-            startedAtRef.current = Date.now();
-            setRunning(true);
-          }}
-        />
-      </Screen>
-    );
-  }
-
   return (
-    <Screen
-      mode="breathe"
-      edges={['top', 'bottom']}
-      style={styles.container}
-      onTouchStart={revealControls}>
-      <Animated.View style={[styles.root, { opacity: enterOpacity }]}>
-        {/* Minimal header */}
-        <View style={styles.header}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close session"
-            onPress={() => {
-              haptics.tick();
-              router.back();
-            }}
-            hitSlop={8}
-            style={({ pressed }) => [
-              styles.backPill,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}>
-            <ThemedText style={[styles.backArrow, { color: palette.glow }]}>‹</ThemedText>
-            <ThemedText style={styles.backText}>Back</ThemedText>
-          </Pressable>
+    <View
+      className="flex-1 bg-zen-cream"
+      style={{ flex: 1, backgroundColor: "#F7F5EE" }}
+    >
+      {/* ── Top Bar ────────────────────────────────────────── */}
+      <View
+        className="px-5 pt-3 pb-2 flex-row items-center justify-between"
+        style={{ paddingTop: insets.top + 8 }}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          onPress={() => {
+            haptics.tick();
+            router.back();
+          }}
+          className="w-10 h-10 rounded-full items-center justify-center -ml-2 active:opacity-60"
+        >
+          <BackArrowIcon size={22} color="#222522" />
+        </Pressable>
 
-          <View
-            style={[
-              styles.roundBadge,
-              {
-                backgroundColor: `${palette.secondary}18`,
-                borderColor: `${palette.secondary}35`,
-              },
-            ]}>
-            <ThemedText style={[styles.roundBadgeText, { color: palette.glow }]}>
-              {totalCycles > 0
-                ? `Round ${breath.cycle} of ${totalCycles}`
-                : `Round ${breath.cycle}`}
-            </ThemedText>
+        <View className="px-3 py-1 rounded-full bg-zen-sage/10 border border-zen-sage/15">
+          <Text className="text-zen-sage text-[11px] font-semibold tracking-wider uppercase">
+            {technique.category}
+          </Text>
+        </View>
+
+        <View className="w-10" />
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 22,
+          paddingTop: 8,
+          paddingBottom: insets.bottom + 90,
+        }}
+      >
+        {/* ── 1. Hero ────────────────────────────────────────── */}
+        <View className="items-center mt-1 mb-3">
+          <Badge color={technique.badgeColor} size={64}>
+            <BotanicalGlyph icon={technique.icon} color="#4E7158" size={32} />
+          </Badge>
+        </View>
+
+        <View className="items-center mb-3">
+          <Text
+            className="text-zen-charcoal text-2xl font-semibold text-center tracking-tight"
+            style={{ fontFamily: "serif" }}
+          >
+            {technique.name}
+          </Text>
+          <Text className="text-zen-muted text-xs text-center mt-1 px-4 leading-5">
+            {technique.tagline}
+          </Text>
+        </View>
+
+        {/* ── 2. Breath Rhythm ───────────────────────────────── */}
+        <View className="items-center mb-3">
+          <View className="flex-row items-center bg-white/80 border border-zen-border/70 px-4 py-1.5 rounded-full shadow-2xs">
+            {technique.phases.map((phase, idx) => (
+              <React.Fragment key={`${phase.label}-${idx}`}>
+                <View className="flex-row items-center gap-1">
+                  <Text className="text-zen-muted text-xs">{phase.label}</Text>
+                  <Text className="text-zen-sage text-xs font-semibold">
+                    {phase.seconds}s
+                  </Text>
+                </View>
+                {idx < technique.phases.length - 1 && (
+                  <Text className="text-zen-muted/30 text-xs mx-1.5">·</Text>
+                )}
+              </React.Fragment>
+            ))}
           </View>
         </View>
 
-        {/* Breath stage — pure round concentric orb + minimal phase dots + quiet timer */}
-        <View style={styles.stage}>
-          <BreathingOrb
-            phase={breath.phase}
-            phaseIndex={breath.phaseIndex}
-            phaseCount={technique.phases.length}
-            running={running && !showComplete}
-            palette={palette}
-            tint={technique.orbTint}
-            cue={breath.phase.cue}
-            size={BREATH_ORB_SIZE}>
-            <PhaseLabel phase={breath.phase} phaseIndex={breath.phaseIndex} />
-          </BreathingOrb>
+        {/* ── 2b. Quick Focus Cue ────────────────────────────── */}
+        <View className="items-center mb-4 px-3">
+          <Text className="text-zen-sage text-[11px] font-medium text-center tracking-wide">
+            ✦ {technique.benefit}
+          </Text>
+        </View>
 
-          {/* Subtle round phase indicator dots */}
-          <View style={styles.dotsRow}>
-            {technique.phases.map((p, idx) => {
-              const active = idx === breath.phaseIndex;
+        {/* ── 3. Simple Setup Card ───────────────────────────── */}
+        <View className="bg-white/95 rounded-2xl p-4 border border-zen-border shadow-xs mb-3.5">
+          {/* Rounds Header */}
+          <View className="flex-row items-center justify-between mb-2 px-0.5">
+            <Text className="text-zen-charcoal text-xs font-semibold uppercase tracking-wider text-[11px]">
+              Rounds
+            </Text>
+            <Text className="text-zen-muted text-xs">
+              {selectedCycles === 0 ? "Free flow" : `${estMinutes} min`}
+            </Text>
+          </View>
+
+          {/* 4 Rounds Pills */}
+          <View className="flex-row gap-2 mb-3.5">
+            {technique.cycleOptions.map((cycles) => {
+              const isSelected = selectedCycles === cycles;
+              const calcMin =
+                cycles === 0
+                  ? null
+                  : Math.max(1, Math.round((cycleSeconds * cycles) / 60));
+
               return (
-                <View
-                  key={`${p.label}-${idx}`}
-                  style={[
-                    styles.phaseDot,
-                    {
-                      backgroundColor: active ? aurora : palette.onSurface,
-                      opacity: active ? 1 : 0.18,
-                      transform: [{ scale: active ? 1.25 : 1 }],
-                    },
-                  ]}
-                />
+                <Pressable
+                  key={cycles}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    cycles === 0 ? "Open" : `${cycles} rounds`
+                  }
+                  onPress={() => {
+                    haptics.tick();
+                    setSelectedCycles(cycles);
+                  }}
+                  className={`flex-1 py-2 px-1 rounded-xl items-center justify-center border active:scale-95 ${
+                    isSelected
+                      ? "bg-zen-sage border-zen-sage shadow-xs"
+                      : "bg-zen-cream/40 border-zen-border/60"
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-semibold ${
+                      isSelected ? "text-white" : "text-zen-charcoal"
+                    }`}
+                  >
+                    {cycles === 0 ? "Open" : cycles}
+                  </Text>
+                  <Text
+                    className={`text-[10px] mt-0.5 ${
+                      isSelected ? "text-white/80" : "text-zen-muted"
+                    }`}
+                  >
+                    {cycles === 0 ? "Flow" : `${calcMin}m`}
+                  </Text>
+                </Pressable>
               );
             })}
           </View>
 
-          {/* Quiet countdown */}
-          <ThemedText style={styles.timer}>
-            {breath.secondsLeft}
-            <ThemedText style={[styles.timerUnit, { color: aurora }]}>s</ThemedText>
-          </ThemedText>
+          <View className="h-[1px] bg-zen-border/40 mb-1" />
 
-          <ThemedText type="small" themeColor="textSecondary" style={styles.caption}>
-            {technique.name}
-          </ThemedText>
-        </View>
-
-        {/* Minimalist control — Obsidian circle with Aurora Teal halo; fixed-height End slot */}
-        <Animated.View style={[styles.controls, { opacity: controlsOpacity }]}>
-          <PausePlayButton
-            paused={!running}
-            fill={palette.primary}
-            aurora={aurora}
+          {/* Sound Toggle */}
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: soundEnabled }}
+            accessibilityLabel="Sound"
             onPress={() => {
               haptics.tick();
-              setRunning((r) => !r);
+              setSoundEnabled((prev) => !prev);
             }}
-          />
-          <View style={styles.endSlot}>
-            {breath.status === 'paused' && (
-              <Button
-                label="End session"
-                variant="ghost"
-                color={aurora}
-                onPress={handleEnd}
-              />
-            )}
+            className="flex-row items-center justify-between py-2.5 px-0.5 active:opacity-75"
+          >
+            <View className="flex-row items-center gap-2.5">
+              <View className="w-7 h-7 rounded-full bg-zen-sage/10 items-center justify-center">
+                <Volume2 size={13} color="#4E7158" />
+              </View>
+              <View>
+                <Text className="text-zen-charcoal text-xs font-semibold">
+                  Sound
+                </Text>
+                <Text className="text-zen-muted text-[10px] mt-0.5">
+                  Play sound while breathing
+                </Text>
+              </View>
+            </View>
+
+            <View
+              className={`px-2.5 py-0.5 rounded-full border ${
+                soundEnabled
+                  ? "bg-zen-sage/15 border-zen-sage/30"
+                  : "bg-zen-cream border-zen-border"
+              }`}
+            >
+              <Text
+                className={`text-[11px] font-semibold ${
+                  soundEnabled ? "text-zen-sage" : "text-zen-muted"
+                }`}
+              >
+                {soundEnabled ? "On" : "Off"}
+              </Text>
+            </View>
+          </Pressable>
+
+          <View className="h-[1px] bg-zen-border/30 my-0.5" />
+
+          {/* 3s Countdown Toggle */}
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: prepCountdown }}
+            accessibilityLabel="3s countdown"
+            onPress={() => {
+              haptics.tick();
+              setPrepCountdown((prev) => !prev);
+            }}
+            className="flex-row items-center justify-between py-2.5 px-0.5 active:opacity-75"
+          >
+            <View className="flex-row items-center gap-2.5">
+              <View className="w-7 h-7 rounded-full bg-zen-sage/10 items-center justify-center">
+                <Timer size={13} color="#4E7158" />
+              </View>
+              <View>
+                <Text className="text-zen-charcoal text-xs font-semibold">
+                  3s Countdown
+                </Text>
+                <Text className="text-zen-muted text-[10px] mt-0.5">
+                  Pause before starting
+                </Text>
+              </View>
+            </View>
+
+            <View
+              className={`px-2.5 py-0.5 rounded-full border ${
+                prepCountdown
+                  ? "bg-zen-sage/15 border-zen-sage/30"
+                  : "bg-zen-cream border-zen-border"
+              }`}
+            >
+              <Text
+                className={`text-[11px] font-semibold ${
+                  prepCountdown ? "text-zen-sage" : "text-zen-muted"
+                }`}
+              >
+                {prepCountdown ? "On" : "Off"}
+              </Text>
+            </View>
+          </Pressable>
+        </View>
+
+        {/* ── 4. Simple How-To Collapsible ───────────────────── */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="How to practice"
+          onPress={() => {
+            haptics.tick();
+            setShowInstructions((prev) => !prev);
+          }}
+          className="bg-white/80 rounded-2xl p-3 border border-zen-border/70 mb-3 active:opacity-85 shadow-2xs"
+        >
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              <BookOpen size={15} color="#4E7158" />
+              <Text className="text-zen-charcoal text-xs font-semibold">
+                How to practice
+              </Text>
+            </View>
+            <View className="flex-row items-center gap-1">
+              {showInstructions ? (
+                <ChevronUp size={14} color="#8B968E" />
+              ) : (
+                <ChevronDown size={14} color="#8B968E" />
+              )}
+            </View>
           </View>
-        </Animated.View>
-      </Animated.View>
 
-      {showComplete && (
-        <SessionComplete
-          palette={palette}
-          accentColor={palette.primary}
-          lines={[
-            technique.name,
-            `${breath.cycle} ${breath.cycle === 1 ? 'round' : 'rounds'}`,
-            summaryMin > 0 ? `${summaryMin} min ${summarySec} sec` : `${summarySec} seconds`,
-          ]}
-          onDone={() => router.back()}
-        />
-      )}
-    </Screen>
-  );
-}
+          {showInstructions && (
+            <View className="mt-2.5 pt-2.5 border-t border-zen-border/50 gap-2">
+              {technique.howTo.map((step, idx) => (
+                <View key={idx} className="flex-row items-start gap-2">
+                  <Text className="text-zen-sage text-xs font-semibold">
+                    {idx + 1}.
+                  </Text>
+                  <Text className="text-zen-charcoal text-xs leading-4 flex-1">
+                    {step}
+                  </Text>
+                </View>
+              ))}
 
-/** Circular Calm Blue pause / play control framed by a soft blue halo. */
-function PausePlayButton({
-  paused,
-  fill,
-  aurora,
-  onPress,
-}: {
-  paused: boolean;
-  fill: string;
-  aurora: string;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={paused ? 'Resume' : 'Pause'}
-      onPress={onPress}
-      hitSlop={8}
-      style={({ pressed }) => [
-        ctrlStyles.outerHalo,
-        {
-          backgroundColor: `${aurora}22`,
-          transform: [{ scale: pressed ? 0.94 : 1 }],
-        },
-      ]}>
-      <View
-        style={[
-          ctrlStyles.circle,
-          {
-            backgroundColor: fill,
-          },
-        ]}>
-        <Svg width={22} height={22} viewBox="0 0 24 24" fill="#FFFFFF">
-          {paused ? (
-            <Path d="M8.5 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L10 4.64A1 1 0 0 0 8.5 5.5Z" />
-          ) : (
-            <>
-              <Rect x={6.5} y={5} width={4} height={14} rx={1.6} />
-              <Rect x={13.5} y={5} width={4} height={14} rx={1.6} />
-            </>
+              {technique.handHint && (
+                <Text className="text-zen-muted text-[11px] italic">
+                  💡 Hint: {technique.handHint}
+                </Text>
+              )}
+
+              <View className="mt-1 bg-zen-sage/10 p-2 rounded-xl">
+                <Text className="text-zen-charcoal text-[11px] leading-4">
+                  <Text className="font-semibold text-zen-sage">Benefit: </Text>
+                  {technique.benefit}.
+                </Text>
+              </View>
+            </View>
           )}
-        </Svg>
+        </Pressable>
+      </ScrollView>
+
+      {/* ── Bottom Action Button ─────────────────────────────── */}
+      <View
+        className="absolute inset-x-0 bottom-0 px-6 bg-zen-cream/95 pt-2.5 border-t border-zen-border/40"
+        style={{ paddingBottom: Math.max(insets.bottom, 20) }}
+      >
+        <Button
+          variant="sage"
+          size="pill"
+          onPress={handleStart}
+          className="w-full shadow-sm"
+        >
+          {selectedCycles === 0
+            ? "Start Practice"
+            : `Start · ${selectedCycles} Rounds (${estMinutes}m)`}
+        </Button>
       </View>
-    </Pressable>
+    </View>
   );
 }
-
-const ctrlStyles = StyleSheet.create({
-  outerHalo: {
-    width: 74,
-    height: 74,
-    borderRadius: 37,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  circle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 20,
-    paddingTop: Spacing.two,
-    paddingBottom: Spacing.four,
-  },
-  missing: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.three,
-  },
-  root: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 40,
-    marginBottom: 4,
-  },
-  backPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  backArrow: {
-    fontSize: FontSize.lg,
-    lineHeight: 22,
-    fontWeight: FontWeight.light,
-  },
-  backText: {
-    fontSize: FontSize.xs,
-    lineHeight: 16,
-    paddingBottom: 1,
-    fontWeight: FontWeight.semibold,
-  },
-  roundBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  roundBadgeText: {
-    fontSize: FontSize.xs,
-    lineHeight: 16,
-    paddingBottom: 1,
-    fontWeight: FontWeight.semibold,
-    fontVariant: ['tabular-nums'],
-  },
-  stage: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.two,
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    marginTop: Spacing.one,
-  },
-  phaseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  timer: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.light,
-    fontVariant: ['tabular-nums'],
-    textAlign: 'center',
-    lineHeight: FontSize.xl + 8,
-    paddingBottom: 2,
-    opacity: 0.92,
-  },
-  timerUnit: {
-    fontSize: FontSize.sm,
-    lineHeight: 18,
-    fontWeight: FontWeight.semibold,
-  },
-  caption: {
-    fontSize: FontSize.sm,
-    lineHeight: 18,
-    paddingBottom: 1,
-    opacity: 0.78,
-  },
-  controls: {
-    gap: Spacing.two,
-    alignItems: 'center',
-  },
-  endSlot: {
-    minHeight: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
-
-
-
-

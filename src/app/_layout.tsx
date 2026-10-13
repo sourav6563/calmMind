@@ -1,44 +1,56 @@
-import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import '@/global.css';
+
+import { PortalHost } from '@rn-primitives/portal';
+import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
+import React from 'react';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import { Motion, Neutral } from '@/constants/theme';
+import { ZenColors } from '@/constants/theme';
+
+import { Platform, StatusBar as RNStatusBar } from 'react-native';
+import * as SystemUI from 'expo-system-ui';
 
 SplashScreen.preventAutoHideAsync();
+SystemUI.setBackgroundColorAsync(ZenColors.background);
 
-const SpaceTheme = {
-  ...DarkTheme,
+if (Platform.OS === 'android') {
+  RNStatusBar.setTranslucent(true);
+  RNStatusBar.setBackgroundColor('transparent');
+}
+
+const ZenTheme = {
+  ...DefaultTheme,
   colors: {
-    ...DarkTheme.colors,
-    background: Neutral.spaceBlack,
-    card: Neutral.spaceSurface,
-    border: Neutral.spaceHairline,
-    text: Neutral.moonlightWhite,
+    ...DefaultTheme.colors,
+    background: ZenColors.background,
+    card: ZenColors.cardSurface,
+    border: ZenColors.cardBorder,
+    text: ZenColors.textPrimary,
   },
 };
 
-/**
- * Root layout — Space Black theme with tabs group plus immersive session routes.
- * Sessions fade in slowly (800ms) — a deliberate slow-down before practice begins.
- */
 export default function RootLayout() {
   return (
-    <ThemeProvider value={SpaceTheme}>
-      <StatusBar style="light" />
+    <ThemeProvider value={ZenTheme}>
+      <StatusBar style="dark" />
       <AnimatedSplashOverlay />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: Neutral.spaceBlack } }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: ZenColors.background },
+          animation: 'fade',
+        }}>
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="breathe/[technique]"
-          options={{ animation: 'fade', animationDuration: Motion.sessionEnter }}
-        />
-        <Stack.Screen
-          name="meditate/[practice]"
-          options={{ animation: 'fade', animationDuration: Motion.sessionEnter }}
-        />
+        <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="breathe/[technique]" />
+        <Stack.Screen name="breathe/session/[technique]" />
+        <Stack.Screen name="meditate/[practice]" />
+        <Stack.Screen name="meditate/session/[practice]" />
+        <Stack.Screen name="support" />
       </Stack>
+      <PortalHost />
     </ThemeProvider>
   );
 }
-

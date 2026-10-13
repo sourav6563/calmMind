@@ -4,83 +4,98 @@ import { Platform } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 
 /**
- * calmMind design tokens — single source of truth.
- * Design filter: "Does this make the user feel calmer?" If no, it doesn't ship.
- * Neuroscience-based palette: no pure black/white, colored shadows, never gray.
+ * calmMind Zen design tokens — single source of truth.
+ * Warm, organic Japanese & Nordic mindfulness palette.
  */
+export const ZenColors = {
+  background: '#F7F5EE',
+  backgroundSecondary: '#EFECE3',
+  cardSurface: '#FFFFFF',
+  cardBorder: '#EAE6DB',
+  cardShadow: 'rgba(50, 40, 30, 0.04)',
 
-/** Base neutrals — Clean Space Black canvas with translucent Space-Glass surfaces and soft moonlight typography. */
+  primarySage: '#4E7158',
+  primarySageHover: '#42624B',
+  primarySageSoft: '#E4ECE5',
+
+  textPrimary: '#222522',
+  textSecondary: '#6B7068',
+  textMuted: '#9BA098',
+
+  badges: {
+    sage: { bg: '#E4ECE5', fg: '#4E7158' },
+    cyan: { bg: '#E0EEF1', fg: '#3D7886' },
+    blue: { bg: '#E2EBF5', fg: '#42709E' },
+    lavender: { bg: '#EFE7F6', fg: '#76569B' },
+    peach: { bg: '#F9EBE0', fg: '#B36D48' },
+    blush: { bg: '#FCE6E6', fg: '#BA4C52' },
+  },
+} as const;
+
+/** Base neutrals */
 export const Neutral = {
-  spaceBlack: '#05070B',
-  spaceGlass: 'rgba(10, 16, 26, 0.42)',
-  spaceSurface: 'rgba(10, 16, 26, 0.46)',
-  spaceSurfaceRaised: 'rgba(20, 32, 45, 0.65)',
-  moonlightWhite: '#E8EFF7',
-  starlightDim: '#728FA7',
-  spaceHairline: 'rgba(156, 181, 201, 0.20)',
-  /** Legacy aliases kept for compatibility — all mapped to Space Black. */
-  warmOffWhite: '#05070B',
-  charcoal: '#E8EFF7',
-  textDim: '#728FA7',
-  hairline: 'rgba(156, 181, 201, 0.20)',
-  nightBackground: '#05070B',
-  nightSurface: 'rgba(10, 16, 26, 0.46)',
-  nightSurfaceRaised: 'rgba(20, 32, 45, 0.65)',
-  nightText: '#E8EFF7',
-  nightTextDim: '#728FA7',
-  nightHairline: 'rgba(156, 181, 201, 0.20)',
+  spaceBlack: '#141A17',
+  spaceGlass: 'rgba(255, 255, 255, 0.75)',
+  spaceSurface: '#FFFFFF',
+  spaceSurfaceRaised: '#F7F5EE',
+  moonlightWhite: '#222522',
+  starlightDim: '#6B7068',
+  spaceHairline: '#EAE6DB',
+
+  warmOffWhite: '#F7F5EE',
+  charcoal: '#222522',
+  textDim: '#6B7068',
+  hairline: '#EAE6DB',
+  nightBackground: '#141A17',
+  nightSurface: '#1D2420',
+  nightSurfaceRaised: '#242D28',
+  nightText: '#EAF0EC',
+  nightTextDim: '#8B968E',
+  nightHairline: 'rgba(255, 255, 255, 0.08)',
 } as const;
 
-/**
- * Breathe — Clean Space Black paired with soft Powder Moonlight Slate-Blue (#44627D / #728FA7 / #9CB5C9).
- */
 export const BreathColors = {
-  primary: '#44627D',
-  secondary: '#728FA7',
-  glow: '#9CB5C9',
-  surface: Neutral.spaceSurface,
-  surfaceBorder: Neutral.spaceHairline,
-  onSurface: '#E8EFF7',
-  /** Dark / sleep variant. */
-  darkPrimary: '#44627D',
-  darkSurface: Neutral.spaceSurface,
-  darkGlow: '#9CB5C9',
+  primary: '#4E7158',
+  secondary: '#6B9075',
+  glow: '#D8E8DC',
+  surface: '#FFFFFF',
+  surfaceBorder: '#EAE6DB',
+  onSurface: '#222522',
+  darkPrimary: '#5E8569',
+  darkSurface: '#1D2420',
+  darkGlow: '#2F4536',
 } as const;
 
-/**
- * Meditate — Clean Space Black paired with soft Powder Moonlight Slate-Blue.
- */
 export const MeditateColors = {
-  primary: '#44627D',
-  secondary: '#728FA7',
-  glow: '#9CB5C9',
-  surface: Neutral.spaceSurface,
-  surfaceBorder: Neutral.spaceHairline,
-  onSurface: '#E8EFF7',
-  /** Dark / sleep variant. */
-  darkPrimary: '#44627D',
-  darkSurface: Neutral.spaceSurface,
-  darkGlow: '#9CB5C9',
+  primary: '#4E7158',
+  secondary: '#6B9075',
+  glow: '#F9EBE0',
+  surface: '#FFFFFF',
+  surfaceBorder: '#EAE6DB',
+  onSurface: '#222522',
+  darkPrimary: '#5E8569',
+  darkSurface: '#1D2420',
+  darkGlow: '#3B332B',
 } as const;
 
 export const Colors = {
   light: {
-    text: Neutral.moonlightWhite,
-    background: Neutral.spaceBlack,
-    backgroundElement: Neutral.spaceSurface,
-    backgroundSelected: Neutral.spaceSurfaceRaised,
-    textSecondary: Neutral.starlightDim,
-    hairline: Neutral.spaceHairline,
-    tint: BreathColors.primary,
+    text: ZenColors.textPrimary,
+    background: ZenColors.background,
+    backgroundElement: ZenColors.cardSurface,
+    backgroundSelected: ZenColors.primarySageSoft,
+    textSecondary: ZenColors.textSecondary,
+    hairline: ZenColors.cardBorder,
+    tint: ZenColors.primarySage,
   },
   dark: {
-    text: Neutral.moonlightWhite,
-    background: Neutral.spaceBlack,
-    backgroundElement: Neutral.spaceSurface,
-    backgroundSelected: Neutral.spaceSurfaceRaised,
-    textSecondary: Neutral.starlightDim,
-    hairline: Neutral.spaceHairline,
-    tint: BreathColors.primary,
+    text: '#EAF0EC',
+    background: '#141A17',
+    backgroundElement: '#1D2420',
+    backgroundSelected: '#242D28',
+    textSecondary: '#8B968E',
+    hairline: 'rgba(255, 255, 255, 0.08)',
+    tint: '#5E8569',
   },
 } as const;
 
@@ -98,39 +113,35 @@ export type ModePalette = {
   onSurface: string;
 };
 
-/** Mode palette — Clean Space Black canvas with eye-soothing Moonlight Slate-Blue accents. */
-export function modePalette(mode: AppMode, _scheme: ColorScheme): ModePalette {
+export function modePalette(mode: AppMode, scheme: ColorScheme): ModePalette {
+  const isDark = scheme === 'dark';
   if (mode === 'breathe') {
     return {
-      primary: BreathColors.primary,
-      deep: '#2F475D',
+      primary: isDark ? BreathColors.darkPrimary : BreathColors.primary,
+      deep: isDark ? '#1F3025' : '#395340',
       secondary: BreathColors.secondary,
-      glow: BreathColors.glow,
-      surface: BreathColors.surface,
-      border: BreathColors.surfaceBorder,
-      onSurface: BreathColors.onSurface,
+      glow: isDark ? BreathColors.darkGlow : BreathColors.glow,
+      surface: isDark ? BreathColors.darkSurface : BreathColors.surface,
+      border: isDark ? Neutral.nightHairline : BreathColors.surfaceBorder,
+      onSurface: isDark ? '#EAF0EC' : BreathColors.onSurface,
     };
   }
   return {
-    primary: MeditateColors.primary,
-    deep: '#2F475D',
+    primary: isDark ? MeditateColors.darkPrimary : MeditateColors.primary,
+    deep: isDark ? '#2E2720' : '#5C4436',
     secondary: MeditateColors.secondary,
-    glow: MeditateColors.glow,
-    surface: MeditateColors.surface,
-    border: MeditateColors.surfaceBorder,
-    onSurface: MeditateColors.onSurface,
+    glow: isDark ? MeditateColors.darkGlow : MeditateColors.glow,
+    surface: isDark ? MeditateColors.darkSurface : MeditateColors.surface,
+    border: isDark ? Neutral.nightHairline : MeditateColors.surfaceBorder,
+    onSurface: isDark ? '#EAF0EC' : MeditateColors.onSurface,
   };
 }
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
+    serif: 'Georgia',
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
@@ -159,15 +170,13 @@ export const Spacing = {
   six: 64,
 } as const;
 
-/** Rounded-only geometry — circles and ovals as base primitives. */
 export const Radius = {
   sm: 12,
-  md: 20,
-  lg: 28,
+  md: 16,
+  lg: 24,
   pill: 999,
 } as const;
 
-/** Type scale (16 = body base). */
 export const FontSize = {
   xs: 12,
   sm: 14,
@@ -184,26 +193,18 @@ export const FontWeight = {
   semibold: '600' as const,
 };
 
-/** Motion — slow, smooth, never snappy (physiological design). */
 export const Motion = {
-  /** Screen-to-screen nav. */
-  nav: 500,
-  /** Entering a session — deliberate slow-down. */
-  sessionEnter: 800,
-  /** Gentle completion overshoot, no confetti/badges. */
+  nav: 400,
+  sessionEnter: 700,
   complete: 1000,
-  /** Control auto-fade. */
-  fade: 600,
-  /** Idle before controls auto-fade. */
+  fade: 500,
   idleBeforeFade: 30_000,
-  /** Orb scale range over a breath phase. */
   orbMinScale: 1,
   orbMaxScale: 1.18,
   easing: Easing.inOut(Easing.ease),
   easingOut: Easing.out(Easing.ease),
 } as const;
 
-/** Minimum touch targets (sleep mode uses the larger size). */
 export const TouchTarget = {
   min: 48,
   sleep: 56,
@@ -211,4 +212,3 @@ export const TouchTarget = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
-

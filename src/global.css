@@ -1,37 +1,70 @@
-:root {
-  --font-display:
-    Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji,
-    Segoe UI Symbol, Noto Color Emoji;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  /* calmMind tokens — no pure black/white */
-  --color-bg: #f7f5f2;
-  --color-text: #1c1c1e;
-  --color-text-dim: #6b6b76;
-  --color-hairline: #e8e5e1;
-  --color-breath-primary: #4a90e2;
-  --color-breath-secondary: #00acc1;
-  --color-breath-glow: #e0f7fa;
-  --color-med-primary: #7c6ff0;
-  --color-med-secondary: #bf55ec;
-  --color-med-glow: #f0e6ff;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --color-bg: #05070B;
-    --color-text: #E8EFF7;
-    --color-text-dim: #728FA7;
-    --color-hairline: rgba(156, 181, 201, 0.16);
-    --color-breath-primary: #44627D;
-    --color-breath-secondary: #728FA7;
-    --color-breath-glow: #9CB5C9;
-    --color-med-primary: #44627D;
-    --color-med-secondary: #728FA7;
-    --color-med-glow: #9CB5C9;
+    --background: 44 27% 95%;
+    --foreground: 120 4% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 120 4% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 120 4% 13%;
+    --primary: 137 18% 37%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 44 21% 91%;
+    --secondary-foreground: 120 4% 13%;
+    --muted: 108 4% 42%;
+    --muted-foreground: 108 4% 42%;
+    --accent: 133 17% 91%;
+    --accent-foreground: 137 18% 37%;
+    --destructive: 356 46% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 41 23% 89%;
+    --input: 41 23% 89%;
+    --ring: 137 18% 37%;
+    --radius: 1rem;
+
+    --font-display: Spline Sans, Inter, ui-sans-serif, system-ui, sans-serif;
+    --font-serif: Georgia, 'Times New Roman', serif;
+
+    /* Legacy Zen palette tokens */
+    --color-bg: #F7F5EE;
+    --color-card: #FFFFFF;
+    --color-text: #222522;
+    --color-text-dim: #6B7068;
+    --color-hairline: #EAE6DB;
+    --color-sage: #4E7158;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: 147 13% 9%;
+      --foreground: 140 16% 93%;
+      --card: 142 10% 13%;
+      --card-foreground: 140 16% 93%;
+      --popover: 142 10% 13%;
+      --popover-foreground: 140 16% 93%;
+      --primary: 137 18% 44%;
+      --primary-foreground: 0 0% 100%;
+      --secondary: 147 13% 16%;
+      --secondary-foreground: 140 16% 93%;
+      --muted: 137 5% 57%;
+      --muted-foreground: 137 5% 57%;
+      --accent: 147 13% 16%;
+      --accent-foreground: 140 16% 93%;
+      --destructive: 356 46% 51%;
+      --destructive-foreground: 0 0% 100%;
+      --border: 147 10% 18%;
+      --input: 147 10% 18%;
+      --ring: 137 18% 44%;
+
+      --color-bg: #141A17;
+      --color-card: #1D2420;
+      --color-text: #EAF0EC;
+      --color-text-dim: #8B968E;
+      --color-hairline: rgba(255, 255, 255, 0.08);
+      --color-sage: #5E8569;
+    }
   }
 }
-

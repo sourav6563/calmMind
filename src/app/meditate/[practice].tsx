@@ -1,78 +1,44 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SessionComplete } from '@/components/session/session-complete';
-import { TimerRing } from '@/components/session/timer-ring';
-import { Button } from '@/components/primitives/button';
-import { Screen } from '@/components/primitives/screen';
-import { ThemedText } from '@/components/themed-text';
-import { getMeditation } from '@/constants/techniques';
-import { FontSize, FontWeight, Radius, Spacing, modePalette } from '@/constants/theme';
-import { useColorSchemeName } from '@/hooks/use-color-scheme-name';
-import { useControlsFade } from '@/hooks/use-controls-fade';
+import { BotanicalGlyph } from '@/components/icons/botanical-glyphs';
+import { BackArrowIcon } from '@/components/icons/ui-icons';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { InfoCard } from '@/components/ui/info-card';
+import { getMeditation, MEDITATIONS } from '@/constants/techniques';
 import { useHaptics } from '@/hooks/use-haptics';
-import { useSessionTimer } from '@/hooks/use-session-timer';
-import { saveRecentSession } from '@/utils/recent-sessions';
 
-/**
- * Meditation session — same skeleton as the breathing session, lavender palette.
- * Countdown ring + rotating prompt + minimal controls.
- */
-export default function MeditateSessionScreen() {
-  const { practice: practiceId } = useLocalSearchParams<{ practice: string }>();
-  const practice = getMeditation(practiceId);
-  const scheme = useColorSchemeName();
-  const palette = useMemo(() => modePalette('meditate', scheme), [scheme]);
+export default function MeditateDetailScreen() {
+  const { practice: id } = useLocalSearchParams<{ practice: string }>();
+  const insets = useSafeAreaInsets();
   const haptics = useHaptics();
 
-  useEffect(() => {
-    if (practice?.id) {
-      void saveRecentSession(practice.id, 'meditate');
-    }
-  }, [practice?.id]);
+  const meditation = getMeditation(id) ?? MEDITATIONS[2]; // Default to Body Scan
 
-  const [durationMin, setDurationMin] = useState(practice?.durationDefault ?? 10);
-  const [running, setRunning] = useState(false);
-  const [showComplete, setShowComplete] = useState(false);
-
-  const totalSeconds = durationMin * 60;
-
-  // Calm completion when the countdown ends (invoked from the ticker).
-  // Plain function on purpose — stored in a ref inside the timer, no memo needed.
-  const handleFinished = () => {
-    setRunning(false);
-    setShowComplete(true);
-    haptics.done();
+  const handleStart = () => {
+    haptics.tick();
+    router.push(`/meditate/session/${meditation.id}`);
   };
 
-  const timer = useSessionTimer(totalSeconds, running && !showComplete, handleFinished);
-
-  // Controls auto-fade while running.
-  const { opacity: controlsOpacity, reveal: revealControls } = useControlsFade(running);
-
-  if (!practice) {
-    return (
-      <Screen mode="meditate" style={styles.missing}>
-        <ThemedText type="subtitle">Practice not found</ThemedText>
-        <Button label="Go back" onPress={() => router.back()} />
-      </Screen>
-    );
-  }
-
-  // Rotating guidance prompt based on elapsed progress.
-  const promptIndex = Math.min(
-    Math.floor(timer.progress * practice.prompts.length),
-    practice.prompts.length - 1,
-  );
-  const prompt = practice.prompts[Math.max(0, promptIndex)];
-
-  const elapsedMin = Math.floor((totalSeconds - timer.secondsLeft) / 60);
+  const meditationSteps = [
+    'Find a quiet space and settle into an upright, relaxed posture.',
+    'Rest your hands naturally on your lap and soften your eyes.',
+    'Let your breathing flow naturally without attempting to control it.',
+    'Rest your awareness with the gentle prompts appearing on screen.',
+  ];
 
   return (
-    <Screen mode="meditate" edges={['top', 'bottom']} style={styles.container} onTouchStart={revealControls}>
-      {/* Header */}
-      <View style={styles.header}>
+    <View
+      className="flex-1 bg-zen-cream"
+      style={{ flex: 1, backgroundColor: '#F7F5EE' }}>
+      {/* ── Top Bar ────────────────────────────────────────── */}
+      <View
+        className="px-5 pt-3 pb-2 flex-row items-center justify-between"
+        style={{ paddingTop: insets.top + 8 }}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Back"
@@ -80,192 +46,82 @@ export default function MeditateSessionScreen() {
             haptics.tick();
             router.back();
           }}
-          hitSlop={8}
-          style={({ pressed }) => [
-            styles.backPill,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              opacity: pressed ? 0.8 : 1,
-            },
-          ]}>
-          <ThemedText style={[styles.backArrow, { color: palette.glow }]}>‹</ThemedText>
-          <ThemedText style={styles.backText}>Back</ThemedText>
+          className="w-10 h-10 rounded-full items-center justify-center -ml-2 active:opacity-60">
+          <BackArrowIcon size={22} color="#222522" />
         </Pressable>
-
-        <ThemedText style={styles.headerTitle}>{practice.name}</ThemedText>
-        <View style={styles.headerSpacer} />
+        <View className="w-10" />
       </View>
 
-      {/* Duration picker — only before starting */}
-      {!running && timer.secondsLeft === totalSeconds && !showComplete && (
-        <View style={styles.durationRow}>
-          {practice.durations.map((min) => (
-            <Pressable
-              key={min}
-              accessibilityRole="button"
-              accessibilityLabel={`${min} minutes`}
-              onPress={() => {
-                haptics.tick();
-                setDurationMin(min);
-                timer.reset();
-              }}
-              style={({ pressed }) => [
-                styles.durationChip,
-                {
-                  backgroundColor: min === durationMin ? palette.primary : palette.surface,
-                  borderColor: min === durationMin ? palette.glow : palette.border,
-                  opacity: pressed ? 0.85 : 1,
-                  transform: [{ scale: pressed ? 0.97 : 1 }],
-                },
-              ]}>
-              <ThemedText
-                style={[
-                  styles.durationText,
-                  { color: min === durationMin ? '#FFFFFF' : palette.onSurface },
-                ]}>
-                {min} min
-              </ThemedText>
-            </Pressable>
-          ))}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          paddingTop: 8,
+          paddingBottom: insets.bottom + 110,
+        }}>
+        {/* Centered Botanical Emblem */}
+        <View className="items-center mt-2 mb-4">
+          <Badge color={meditation.badgeColor} size={68}>
+            <BotanicalGlyph icon={meditation.icon} color="#B36D48" size={36} />
+          </Badge>
         </View>
-      )}
 
-      {/* Timer ring */}
-      <View style={styles.ringWrap}>
-        <TimerRing
-          secondsLeft={timer.secondsLeft}
-          progress={timer.progress}
-          palette={palette}
-          size={240}
-        />
-      </View>
+        {/* Title & Description */}
+        <View className="items-center mb-6">
+          <Text
+            className="text-zen-charcoal text-2xl font-semibold text-center"
+            style={{ fontFamily: 'serif' }}>
+            {meditation.name}
+          </Text>
+          <Text className="text-zen-muted text-sm text-center mt-2 px-4 leading-5">
+            {meditation.tagline}
+          </Text>
+        </View>
 
-      {/* Guidance prompt */}
-      <View style={styles.promptWrap}>
-        <ThemedText style={styles.prompt} numberOfLines={2}>
-          {running || timer.progress > 0 ? prompt : practice.benefit}
-        </ThemedText>
-      </View>
+        {/* Info Card (Metadata) */}
+        <View className="mb-6">
+          <InfoCard
+            durationText={`${meditation.durationDefault} minutes`}
+            benefitText={meditation.benefit}
+            bestForText={meditation.bestFor}
+            badgeColor="peach"
+          />
+        </View>
 
-      {/* Controls */}
-      <Animated.View style={[styles.controls, { opacity: controlsOpacity }]}>
+        {/* Step-by-Step Instructions */}
+        <View className="mb-6">
+          <Text className="text-zen-charcoal text-base font-semibold mb-3">
+            Mindful guidance
+          </Text>
+          <Card className="p-4 bg-white/90 border-zen-border gap-3">
+            {meditationSteps.map((step, idx) => (
+              <View key={idx} className="flex-row items-start">
+                <View className="w-6 h-6 rounded-full bg-zen-peach/10 items-center justify-center mr-3 mt-0.5 shrink-0">
+                  <Text className="text-zen-peach text-xs font-semibold">
+                    {idx + 1}
+                  </Text>
+                </View>
+                <Text className="text-zen-charcoal text-sm leading-5 flex-1">
+                  {step}
+                </Text>
+              </View>
+            ))}
+          </Card>
+        </View>
+      </ScrollView>
+
+      {/* ── Bottom Fixed Action Button ──────────────────────── */}
+      <View
+        className="absolute inset-x-0 bottom-0 px-6 bg-zen-cream/95 pt-3"
+        style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
         <Button
-          label={running ? 'Pause' : timer.progress > 0 ? 'Resume' : 'Begin'}
-          onPress={() => setRunning((r) => !r)}
-          color={palette.primary}
-          size="lg"
-          style={styles.mainBtn}
-        />
-        {(running || (timer.progress > 0 && !timer.finished)) && (
-          <Button label="End session" variant="ghost" color={palette.secondary} onPress={() => setShowComplete(true)} />
-        )}
-      </Animated.View>
-
-      {showComplete && (
-        <SessionComplete
-          palette={palette}
-          lines={[
-            practice.name,
-            `${Math.max(1, elapsedMin)} ${elapsedMin === 1 ? 'minute' : 'minutes'}`,
-          ]}
-          onDone={() => router.back()}
-        />
-      )}
-    </Screen>
+          variant="sage"
+          size="pill"
+          onPress={handleStart}
+          className="w-full">
+          Start Meditation
+        </Button>
+      </View>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.four,
-  },
-  missing: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.three,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: 40,
-    marginBottom: 4,
-  },
-  backPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  backArrow: {
-    fontSize: FontSize.lg,
-    lineHeight: 22,
-    fontWeight: FontWeight.light,
-  },
-  backText: {
-    fontSize: FontSize.xs,
-    lineHeight: 16,
-    paddingBottom: 1,
-    fontWeight: FontWeight.semibold,
-  },
-  headerTitle: {
-    fontSize: FontSize.md,
-    lineHeight: 22,
-    paddingBottom: 1,
-    fontWeight: FontWeight.semibold,
-    color: '#FFFFFF',
-  },
-  headerSpacer: {
-    width: 68,
-  },
-  durationRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: Spacing.two,
-    paddingTop: Spacing.three,
-  },
-  durationChip: {
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.two,
-    borderRadius: Radius.pill,
-    borderWidth: 1.5,
-    minHeight: 40,
-    justifyContent: 'center',
-  },
-  durationText: {
-    fontSize: FontSize.sm,
-    lineHeight: 18,
-    fontWeight: FontWeight.semibold,
-  },
-  ringWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  promptWrap: {
-    minHeight: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.four,
-  },
-  prompt: {
-    fontSize: FontSize.lg,
-    textAlign: 'center',
-    lineHeight: FontSize.lg + 8,
-    paddingBottom: 2,
-  },
-  controls: {
-    gap: Spacing.two,
-    alignItems: 'center',
-    paddingTop: Spacing.three,
-  },
-  mainBtn: {
-    alignSelf: 'stretch',
-  },
-});

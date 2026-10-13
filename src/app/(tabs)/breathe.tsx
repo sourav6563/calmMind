@@ -1,126 +1,58 @@
 import { router } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React from 'react';
+import { ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { TechniqueCard } from '@/components/technique-card';
-import { Screen } from '@/components/primitives/screen';
-import { SectionHeader } from '@/components/primitives/section-header';
-import { ThemedText } from '@/components/themed-text';
+import { PracticeRow } from '@/components/ui/practice-row';
 import { TECHNIQUES } from '@/constants/techniques';
-import { FontSize, FontWeight, Neutral, modePalette, Radius, Spacing } from '@/constants/theme';
-import { useColorSchemeName } from '@/hooks/use-color-scheme-name';
 
-/** Full Breathing technique catalog — opened via 'Explore all ›' from Home. */
-export default function BreatheScreen() {
-  const scheme = useColorSchemeName();
-  const palette = modePalette('breathe', scheme);
+export default function BreatheTabScreen() {
+  const insets = useSafeAreaInsets();
+
+  // Filter out any alias techniques for clean catalog display
+  const practices = TECHNIQUES.filter((t) => t.id !== 'coherent' && t.id !== 'physiological-sigh');
 
   return (
-    <Screen mode="breathe" style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.topNav}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Back to Home Sanctuary"
-            hitSlop={8}
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-            style={({ pressed }) => [
-              styles.backPill,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}>
-            <ThemedText style={[styles.backArrow, { color: palette.glow }]}>‹</ThemedText>
-            <ThemedText style={styles.backText}>Sanctuary</ThemedText>
-          </Pressable>
+    <View
+      className="flex-1 bg-zen-cream"
+      style={{ flex: 1, backgroundColor: '#F7F5EE' }}>
+      {/* ── Zen Header ─────────────────────────────────────────── */}
+      <View
+        className="px-6 pb-2"
+        style={{ paddingTop: insets.top + 16, paddingHorizontal: 24, paddingBottom: 12 }}>
+        <Text
+          className="text-zen-charcoal text-3xl font-semibold"
+          style={{ fontFamily: 'serif', fontSize: 32, fontWeight: '600', color: '#222522' }}>
+          Breath
+        </Text>
+        <Text
+          className="text-zen-muted text-sm mt-1 font-medium"
+          style={{ color: '#6B7068', fontSize: 14, marginTop: 4 }}>
+          Simple techniques to calm your nervous system
+        </Text>
+      </View>
 
-          <View
-            style={[
-              styles.countBadge,
-              { backgroundColor: `${palette.secondary}1A`, borderColor: `${palette.secondary}35` },
-            ]}>
-            <ThemedText style={[styles.countText, { color: palette.glow }]}>
-              {TECHNIQUES.length} rhythms
-            </ThemedText>
-          </View>
-        </View>
-
-        <SectionHeader
-          title="Breathe"
-          subtitle="Pick what you need right now. Follow the gentle rhythm."
-        />
-
-        {TECHNIQUES.map((t) => {
-          const totalSec = t.phases.reduce((s, p) => s + p.seconds, 0);
-          const estMin = Math.max(1, Math.round((totalSec * t.cyclesDefault) / 60));
-          return (
-            <TechniqueCard
-              key={t.id}
-              name={t.name}
-              category={t.category}
-              subtitle={`${t.benefit} · ~${estMin}m`}
-              icon={t.icon}
-              color={t.orbTint.core}
-              accentColor={t.orbTint.glow}
-              surfaceColor={Neutral.spaceGlass}
-              borderColor={Neutral.spaceHairline}
-              onPress={() => router.push(`/breathe/${t.id}`)}
-            />
-          );
-        })}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: 14,
+          paddingBottom: insets.bottom + 80,
+        }}>
+        {/* Practice Cards */}
+        {practices.map((technique) => (
+          <PracticeRow
+            key={technique.id}
+            title={technique.name}
+            durationText={`${technique.estimatedMinutes} min`}
+            icon={technique.icon}
+            badgeColor={technique.badgeColor}
+            onPress={() => {
+              router.push(`/breathe/${technique.id}`);
+            }}
+          />
+        ))}
       </ScrollView>
-    </Screen>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 20,
-  },
-  content: {
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.six,
-    gap: Spacing.three,
-    maxWidth: 460,
-    width: '100%',
-    alignSelf: 'center',
-  },
-  topNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  backArrow: {
-    fontSize: FontSize.lg,
-    lineHeight: 22,
-    fontWeight: FontWeight.light,
-  },
-  backText: {
-    fontSize: FontSize.xs,
-    lineHeight: 16,
-    paddingBottom: 1,
-    fontWeight: FontWeight.semibold,
-  },
-  countBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-  },
-  countText: {
-    fontSize: FontSize.xs,
-    lineHeight: 16,
-    paddingBottom: 1,
-    fontWeight: FontWeight.semibold,
-  },
-});
