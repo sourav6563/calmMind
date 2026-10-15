@@ -113,7 +113,7 @@ export function SessionIntro({
         {technique.handHint && (
           <View style={styles.hintBox}>
             <ThemedText style={styles.handHint}>
-              💡 {technique.handHint}
+              Hand position: {technique.handHint}
             </ThemedText>
           </View>
         )}

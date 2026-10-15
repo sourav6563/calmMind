@@ -1,10 +1,11 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import {
-    BookOpen,
-    ChevronDown,
-    ChevronUp,
-    Timer,
-    Volume2,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Volume2,
+  VolumeX,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -14,6 +15,8 @@ import { BotanicalGlyph } from "@/components/icons/botanical-glyphs";
 import { BackArrowIcon } from "@/components/icons/ui-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ZenSwitch } from "@/components/ui/zen-switch";
 import { getTechnique, TECHNIQUES } from "@/constants/techniques";
 import { useHaptics } from "@/hooks/use-haptics";
 
@@ -29,15 +32,10 @@ export default function BreatheDetailScreen() {
     technique.cyclesDefault,
   );
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
-  const [prepCountdown, setPrepCountdown] = useState<boolean>(true);
   const [showInstructions, setShowInstructions] = useState<boolean>(false);
 
   // Dynamic timing computation
   const cycleSeconds = technique.phases.reduce((sum, p) => sum + p.seconds, 0);
-  const estMinutes =
-    selectedCycles === 0
-      ? null
-      : Math.max(1, Math.round((cycleSeconds * selectedCycles) / 60));
 
   const handleStart = () => {
     haptics.tick();
@@ -47,7 +45,6 @@ export default function BreatheDetailScreen() {
         technique: technique.id,
         cycles: String(selectedCycles),
         sound: soundEnabled ? "1" : "0",
-        prep: prepCountdown ? "1" : "0",
       },
     });
   };
@@ -59,8 +56,8 @@ export default function BreatheDetailScreen() {
     >
       {/* ── Top Bar ────────────────────────────────────────── */}
       <View
-        className="px-5 pt-3 pb-2 flex-row items-center justify-between"
-        style={{ paddingTop: insets.top + 8 }}
+        className="px-5 pt-3 pb-1 flex-row items-center justify-between"
+        style={{ paddingTop: insets.top + 6 }}
       >
         <Pressable
           accessibilityRole="button"
@@ -73,13 +70,6 @@ export default function BreatheDetailScreen() {
         >
           <BackArrowIcon size={22} color="#222522" />
         </Pressable>
-
-        <View className="px-3 py-1 rounded-full bg-zen-sage/10 border border-zen-sage/15">
-          <Text className="text-zen-sage text-[11px] font-semibold tracking-wider uppercase">
-            {technique.category}
-          </Text>
-        </View>
-
         <View className="w-10" />
       </View>
 
@@ -87,17 +77,18 @@ export default function BreatheDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 22,
-          paddingTop: 8,
+          paddingTop: 4,
           paddingBottom: insets.bottom + 90,
         }}
       >
-        {/* ── 1. Hero ────────────────────────────────────────── */}
-        <View className="items-center mt-1 mb-3">
-          <Badge color={technique.badgeColor} size={64}>
-            <BotanicalGlyph icon={technique.icon} color="#4E7158" size={32} />
+        {/* ── 1. Hero Emblem ─────────────────────────────────── */}
+        <View className="items-center mt-1 mb-2">
+          <Badge color={technique.badgeColor} size={56}>
+            <BotanicalGlyph icon={technique.icon} color="#4E7158" size={30} />
           </Badge>
         </View>
 
+        {/* ── Title & Tagline ────────────────────────────────── */}
         <View className="items-center mb-3">
           <Text
             className="text-zen-charcoal text-2xl font-semibold text-center tracking-tight"
@@ -105,19 +96,21 @@ export default function BreatheDetailScreen() {
           >
             {technique.name}
           </Text>
-          <Text className="text-zen-muted text-xs text-center mt-1 px-4 leading-5">
+          <Text className="text-zen-muted text-xs text-center mt-1.5 px-4 leading-4">
             {technique.tagline}
           </Text>
         </View>
 
         {/* ── 2. Breath Rhythm ───────────────────────────────── */}
-        <View className="items-center mb-3">
-          <View className="flex-row items-center bg-white/80 border border-zen-border/70 px-4 py-1.5 rounded-full shadow-2xs">
+        <View className="items-center mb-3.5">
+          <View className="flex-row items-center bg-white/90 border border-zen-border/70 px-3.5 py-1.5 rounded-full shadow-2xs">
             {technique.phases.map((phase, idx) => (
               <React.Fragment key={`${phase.label}-${idx}`}>
                 <View className="flex-row items-center gap-1">
-                  <Text className="text-zen-muted text-xs">{phase.label}</Text>
-                  <Text className="text-zen-sage text-xs font-semibold">
+                  <Text className="text-zen-muted text-[11px]">
+                    {phase.label}
+                  </Text>
+                  <Text className="text-zen-sage text-[11px] font-semibold">
                     {phase.seconds}s
                   </Text>
                 </View>
@@ -129,27 +122,17 @@ export default function BreatheDetailScreen() {
           </View>
         </View>
 
-        {/* ── 2b. Quick Focus Cue ────────────────────────────── */}
-        <View className="items-center mb-4 px-3">
-          <Text className="text-zen-sage text-[11px] font-medium text-center tracking-wide">
-            ✦ {technique.benefit}
-          </Text>
-        </View>
-
-        {/* ── 3. Simple Setup Card ───────────────────────────── */}
-        <View className="bg-white/95 rounded-2xl p-4 border border-zen-border shadow-xs mb-3.5">
+        {/* ── 3. Unified Practice Setup & Info Card ──────────── */}
+        <Card className="p-3.5 bg-white/95 border-zen-border mb-3 shadow-xs">
           {/* Rounds Header */}
-          <View className="flex-row items-center justify-between mb-2 px-0.5">
-            <Text className="text-zen-charcoal text-xs font-semibold uppercase tracking-wider text-[11px]">
+          <View className="mb-2 px-0.5">
+            <Text className="text-zen-charcoal text-[11px] font-semibold uppercase tracking-wider">
               Rounds
-            </Text>
-            <Text className="text-zen-muted text-xs">
-              {selectedCycles === 0 ? "Free flow" : `${estMinutes} min`}
             </Text>
           </View>
 
           {/* 4 Rounds Pills */}
-          <View className="flex-row gap-2 mb-3.5">
+          <View className="flex-row gap-2 mb-2.5">
             {technique.cycleOptions.map((cycles) => {
               const isSelected = selectedCycles === cycles;
               const calcMin =
@@ -162,15 +145,15 @@ export default function BreatheDetailScreen() {
                   key={cycles}
                   accessibilityRole="button"
                   accessibilityLabel={
-                    cycles === 0 ? "Open" : `${cycles} rounds`
+                    cycles === 0 ? "Open flow" : `${cycles} rounds`
                   }
                   onPress={() => {
                     haptics.tick();
                     setSelectedCycles(cycles);
                   }}
-                  className={`flex-1 py-2 px-1 rounded-xl items-center justify-center border active:scale-95 ${
+                  className={`flex-1 py-1.5 px-1 rounded-xl items-center justify-center border active:scale-95 ${
                     isSelected
-                      ? "bg-zen-sage border-zen-sage shadow-xs"
+                      ? "bg-zen-sage border-zen-sage shadow-2xs"
                       : "bg-zen-cream/40 border-zen-border/60"
                   }`}
                 >
@@ -193,8 +176,6 @@ export default function BreatheDetailScreen() {
             })}
           </View>
 
-          <View className="h-[1px] bg-zen-border/40 mb-1" />
-
           {/* Sound Toggle */}
           <Pressable
             accessibilityRole="switch"
@@ -204,85 +185,53 @@ export default function BreatheDetailScreen() {
               haptics.tick();
               setSoundEnabled((prev) => !prev);
             }}
-            className="flex-row items-center justify-between py-2.5 px-0.5 active:opacity-75"
+            className="flex-row items-center justify-between py-2 px-1 active:opacity-70"
           >
-            <View className="flex-row items-center gap-2.5">
-              <View className="w-7 h-7 rounded-full bg-zen-sage/10 items-center justify-center">
-                <Volume2 size={13} color="#4E7158" />
+            <View className="flex-row items-center gap-2.5 flex-1">
+              <View className="w-7 h-7 rounded-full bg-zen-sage/10 items-center justify-center shrink-0">
+                {soundEnabled ? (
+                  <Volume2 size={14} strokeWidth={1.8} color="#4E7158" />
+                ) : (
+                  <VolumeX size={14} strokeWidth={1.8} color="#9BA098" />
+                )}
               </View>
-              <View>
-                <Text className="text-zen-charcoal text-xs font-semibold">
+              <View className="flex-1">
+                <Text className="text-zen-charcoal text-xs font-medium">
                   Sound
                 </Text>
-                <Text className="text-zen-muted text-[10px] mt-0.5">
-                  Play sound while breathing
+                <Text className="text-zen-muted text-[10px]">
+                  {soundEnabled ? "On" : "Muted"}
                 </Text>
               </View>
             </View>
-
-            <View
-              className={`px-2.5 py-0.5 rounded-full border ${
-                soundEnabled
-                  ? "bg-zen-sage/15 border-zen-sage/30"
-                  : "bg-zen-cream border-zen-border"
-              }`}
-            >
-              <Text
-                className={`text-[11px] font-semibold ${
-                  soundEnabled ? "text-zen-sage" : "text-zen-muted"
-                }`}
-              >
-                {soundEnabled ? "On" : "Off"}
-              </Text>
+            <View pointerEvents="none">
+              <ZenSwitch checked={soundEnabled} size="sm" />
             </View>
           </Pressable>
 
-          <View className="h-[1px] bg-zen-border/30 my-0.5" />
-
-          {/* 3s Countdown Toggle */}
-          <Pressable
-            accessibilityRole="switch"
-            accessibilityState={{ checked: prepCountdown }}
-            accessibilityLabel="3s countdown"
-            onPress={() => {
-              haptics.tick();
-              setPrepCountdown((prev) => !prev);
-            }}
-            className="flex-row items-center justify-between py-2.5 px-0.5 active:opacity-75"
-          >
-            <View className="flex-row items-center gap-2.5">
-              <View className="w-7 h-7 rounded-full bg-zen-sage/10 items-center justify-center">
-                <Timer size={13} color="#4E7158" />
-              </View>
-              <View>
-                <Text className="text-zen-charcoal text-xs font-semibold">
-                  3s Countdown
-                </Text>
-                <Text className="text-zen-muted text-[10px] mt-0.5">
-                  Pause before starting
-                </Text>
-              </View>
-            </View>
-
-            <View
-              className={`px-2.5 py-0.5 rounded-full border ${
-                prepCountdown
-                  ? "bg-zen-sage/15 border-zen-sage/30"
-                  : "bg-zen-cream border-zen-border"
-              }`}
-            >
-              <Text
-                className={`text-[11px] font-semibold ${
-                  prepCountdown ? "text-zen-sage" : "text-zen-muted"
-                }`}
-              >
-                {prepCountdown ? "On" : "Off"}
+          {/* Integrated Purpose & Best For callouts */}
+          <View className="pt-1 px-0.5 gap-2">
+            <View className="flex-row items-start gap-2.5">
+              <View className="w-1.5 h-1.5 rounded-full bg-zen-sage shrink-0 ml-1 mt-1.5" />
+              <Text className="text-zen-charcoal text-xs flex-1 leading-4">
+                <Text className="font-semibold text-zen-sage">Purpose: </Text>
+                {technique.benefit}
               </Text>
             </View>
-          </Pressable>
-        </View>
 
-        {/* ── 4. Simple How-To Collapsible ───────────────────── */}
+            <View className="flex-row items-start gap-2.5">
+              <View className="w-1.5 h-1.5 rounded-full bg-zen-sage shrink-0 ml-1 mt-1.5" />
+              <Text className="text-zen-charcoal text-xs flex-1 leading-4">
+                <Text className="font-semibold text-zen-sage">
+                  Best for:{" "}
+                </Text>
+                {technique.bestFor}
+              </Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* ── 4. How to Practice (Collapsible) ───────────────── */}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="How to practice"
@@ -290,69 +239,87 @@ export default function BreatheDetailScreen() {
             haptics.tick();
             setShowInstructions((prev) => !prev);
           }}
-          className="bg-white/80 rounded-2xl p-3 border border-zen-border/70 mb-3 active:opacity-85 shadow-2xs"
+          className="bg-white/90 rounded-3xl border border-zen-border p-3.5 mb-2 active:opacity-90 shadow-2xs"
         >
           <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center gap-2">
-              <BookOpen size={15} color="#4E7158" />
-              <Text className="text-zen-charcoal text-xs font-semibold">
+            <View className="flex-row items-center gap-2.5">
+              <View className="w-6 h-6 rounded-full bg-zen-sage/10 items-center justify-center">
+                <BookOpen size={13} color="#4E7158" strokeWidth={1.8} />
+              </View>
+              <Text className="text-zen-charcoal text-sm font-semibold">
                 How to practice
+              </Text>
+              <Text className="text-zen-muted text-xs">
+                ({technique.howTo.length} steps)
               </Text>
             </View>
             <View className="flex-row items-center gap-1">
               {showInstructions ? (
-                <ChevronUp size={14} color="#8B968E" />
+                <ChevronUp size={16} color="#8B968E" />
               ) : (
-                <ChevronDown size={14} color="#8B968E" />
+                <ChevronDown size={16} color="#8B968E" />
               )}
             </View>
           </View>
 
           {showInstructions && (
-            <View className="mt-2.5 pt-2.5 border-t border-zen-border/50 gap-2">
+            <View className="mt-3 pt-3 border-t border-zen-border/50 gap-3">
               {technique.howTo.map((step, idx) => (
-                <View key={idx} className="flex-row items-start gap-2">
-                  <Text className="text-zen-sage text-xs font-semibold">
-                    {idx + 1}.
-                  </Text>
-                  <Text className="text-zen-charcoal text-xs leading-4 flex-1">
+                <View key={idx} className="flex-row items-start">
+                  <View className="w-5 h-5 rounded-full bg-zen-sage/12 items-center justify-center mr-2.5 mt-0.5 shrink-0">
+                    <Text className="text-zen-sage text-xs font-semibold">
+                      {idx + 1}
+                    </Text>
+                  </View>
+                  <Text className="text-zen-charcoal text-xs leading-5 flex-1">
                     {step}
                   </Text>
                 </View>
               ))}
 
               {technique.handHint && (
-                <Text className="text-zen-muted text-[11px] italic">
-                  💡 Hint: {technique.handHint}
-                </Text>
+                <View className="flex-row items-start pt-2 border-t border-zen-border/40">
+                  <View className="w-1.5 h-1.5 rounded-full bg-zen-sage shrink-0 ml-1 mt-1.5 mr-2.5" />
+                  <Text className="text-zen-muted text-xs leading-4 flex-1">
+                    <Text className="font-semibold text-zen-charcoal">
+                      Hand position:{" "}
+                    </Text>
+                    {technique.handHint}
+                  </Text>
+                </View>
               )}
-
-              <View className="mt-1 bg-zen-sage/10 p-2 rounded-xl">
-                <Text className="text-zen-charcoal text-[11px] leading-4">
-                  <Text className="font-semibold text-zen-sage">Benefit: </Text>
-                  {technique.benefit}.
-                </Text>
-              </View>
             </View>
           )}
         </Pressable>
       </ScrollView>
 
-      {/* ── Bottom Action Button ─────────────────────────────── */}
+      {/* ── Bottom Fixed Action Button ──────────────────────── */}
       <View
-        className="absolute inset-x-0 bottom-0 px-6 bg-zen-cream/95 pt-2.5 border-t border-zen-border/40"
-        style={{ paddingBottom: Math.max(insets.bottom, 20) }}
+        className="absolute inset-x-0 bottom-0 pointer-events-box-none"
+        style={{ paddingBottom: Math.max(insets.bottom, 24) }}
       >
-        <Button
-          variant="sage"
-          size="pill"
-          onPress={handleStart}
-          className="w-full shadow-sm"
-        >
-          {selectedCycles === 0
-            ? "Start Practice"
-            : `Start · ${selectedCycles} Rounds (${estMinutes}m)`}
-        </Button>
+        {/* Ambient Mist Scrim (Bokashi - soft gradient fade when scrolled) */}
+        <LinearGradient
+          colors={["transparent", "rgba(247, 245, 238, 0.88)", "#F7F5EE"]}
+          style={{
+            position: "absolute",
+            top: -24,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
+          pointerEvents="none"
+        />
+        <View className="px-6 pt-2">
+          <Button
+            variant="sage"
+            size="pill"
+            onPress={handleStart}
+            className="w-full"
+          >
+            Begin
+          </Button>
+        </View>
       </View>
     </View>
   );

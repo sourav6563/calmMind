@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dimensions, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -37,7 +37,39 @@ export function ConcentricBreather({
   const holdPulse = useSharedValue(1);
   const textOpacity = useSharedValue(1);
 
-  // Smooth respiratory transitions & organic curves
+  // Gentle guidance hint for intuitive focus
+  const subCue = isHold
+    ? 'Rest in stillness'
+    : scaleTarget > 1.05
+    ? 'Breathe in slowly'
+    : 'Release gently';
+
+  // Zen Philosophy: The center is anchored in stillness (no jumping, shifting, or flickering)
+  const [currentLabel, setCurrentLabel] = useState(phaseLabel);
+  const [currentSubCue, setCurrentSubCue] = useState(subCue);
+
+  // Soft Zen Ink Cross-Dissolve: old text dissolves softly, swaps at 0, new text emerges
+  useEffect(() => {
+    if (phaseLabel === currentLabel && subCue === currentSubCue) return;
+
+    cancelAnimation(textOpacity);
+    textOpacity.value = withTiming(
+      0,
+      { duration: 150, easing: Easing.out(Easing.sin) },
+      (finished) => {
+        if (finished) {
+          runOnJS(setCurrentLabel)(phaseLabel);
+          runOnJS(setCurrentSubCue)(subCue);
+          textOpacity.value = withTiming(1, {
+            duration: 240,
+            easing: Easing.in(Easing.sin),
+          });
+        }
+      }
+    );
+  }, [phaseLabel, subCue, currentLabel, currentSubCue, textOpacity]);
+
+  // Smooth respiratory transitions on the outer halo rings
   useEffect(() => {
     if (isPaused) {
       cancelAnimation(animatedScale);
@@ -45,21 +77,15 @@ export function ConcentricBreather({
       return;
     }
 
-    // Gentle text opacity transition on phase change
-    textOpacity.value = withSequence(
-      withTiming(0.2, { duration: 130, easing: Easing.out(Easing.quad) }),
-      withTiming(1, { duration: 260, easing: Easing.in(Easing.quad) }),
-    );
-
     if (isHold) {
-      // Subtle organic breathing micro-pulse during hold phases so it feels alive
+      // Subtle organic breathing micro-pulse on the outer rings only
       holdPulse.value = withRepeat(
-        withTiming(1.02, {
+        withTiming(1.025, {
           duration: 1800,
           easing: Easing.inOut(Easing.sin),
         }),
         -1,
-        true,
+        true
       );
     } else {
       holdPulse.value = withTiming(1, { duration: 250 });
@@ -78,7 +104,7 @@ export function ConcentricBreather({
         easing,
       });
     }
-  }, [phaseLabel, phaseSeconds, scaleTarget, isHold, isPaused, animatedScale, holdPulse, textOpacity]);
+  }, [phaseSeconds, scaleTarget, isHold, isPaused, animatedScale, holdPulse]);
 
   // Outermost halo ring — subtle expansive mint aura with soft opacity wave
   const outerRingStyle = useAnimatedStyle(() => {
@@ -93,16 +119,8 @@ export function ConcentricBreather({
   const midRingStyle = useAnimatedStyle(() => {
     const s = animatedScale.value * holdPulse.value;
     return {
-      transform: [{ scale: 1 + (s - 1) * 0.80 }],
+      transform: [{ scale: 1 + (s - 1) * 0.75 }],
       opacity: 0.60 + (s - 1) * 0.30,
-    };
-  });
-
-  // Inner core disc — solid frosted glass sanctuary
-  const innerDiscStyle = useAnimatedStyle(() => {
-    const s = animatedScale.value * holdPulse.value;
-    return {
-      transform: [{ scale: 1 + (s - 1) * 0.55 }],
     };
   });
 
@@ -111,13 +129,6 @@ export function ConcentricBreather({
   }));
 
   const displaySeconds = secondsLeft ?? phaseSeconds;
-
-  // Gentle guidance hint for intuitive focus
-  const subCue = isHold
-    ? 'Rest in stillness'
-    : scaleTarget > 1.05
-    ? 'Breathe in slowly'
-    : 'Release gently';
 
   return (
     <View
@@ -147,57 +158,72 @@ export function ConcentricBreather({
         ]}
       />
 
-      {/* ── Inner Core Disc 3 (Frosted Washi-Cream Sanctuary) ── */}
-      <Animated.View
+      {/* ── Inner Core Disc 3 (Frosted Washi-Cream Sanctuary — The Still Center) ── */}
+      <View
         className="absolute rounded-full bg-white/95 border border-white/90 items-center justify-center shadow-md"
-        style={[
-          {
-            width: BASE_SIZE * 0.70,
-            height: BASE_SIZE * 0.70,
-            shadowColor: '#2C3E32',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.08,
-            shadowRadius: 14,
-            elevation: 4,
-          },
-          innerDiscStyle,
-        ]}>
-        <Animated.View style={[{ alignItems: 'center', justifyContent: 'center' }, animatedTextStyle]}>
-          {/* Optional Nostril Cue */}
-          {cue && (
-            <View className="mb-1 px-2.5 py-0.5 rounded-full bg-zen-sage/15 border border-zen-sage/20">
-              <Text className="text-zen-sage text-[10px] font-semibold tracking-wider uppercase">
-                {cue === 'left' ? '👈 Left Side' : 'Right Side 👉'}
-              </Text>
-            </View>
-          )}
+        style={{
+          width: BASE_SIZE * 0.70,
+          height: BASE_SIZE * 0.70,
+          shadowColor: '#2C3E32',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 14,
+          elevation: 4,
+        }}>
+        <Animated.View
+          style={[
+            {
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+            },
+            animatedTextStyle,
+          ]}>
+          {/* Optional Nostril Cue Slot (Fixed Height: Zero Shifting) */}
+          <View style={{ height: 20, justifyContent: 'center', alignItems: 'center' }}>
+            {cue ? (
+              <View className="px-2.5 py-0.5 rounded-full bg-zen-sage/15 border border-zen-sage/20">
+                <Text className="text-zen-sage text-[10px] font-semibold tracking-wider uppercase">
+                  {cue === 'left' ? '👈 Left Side' : 'Right Side 👉'}
+                </Text>
+              </View>
+            ) : null}
+          </View>
 
-          {/* Primary Phase Label */}
-          <Text
-            className="text-zen-charcoal font-semibold text-center tracking-tight"
-            style={{
-              fontFamily: 'serif',
-              fontSize: 21,
-              color: '#222522',
-            }}>
-            {phaseLabel}
-          </Text>
-
-          {/* Sub-cue guiding text */}
-          <Text className="text-zen-muted text-[10px] font-normal mt-0.5 text-center">
-            {subCue}
-          </Text>
-
-          {/* Countdown timer badge */}
-          <View className="mt-1 px-2.5 py-0.5 rounded-full bg-zen-sage/10 border border-zen-sage/20 items-center justify-center">
+          {/* Primary Phase Label (Fixed Height Container: Zero Shifting) */}
+          <View style={{ height: 32, justifyContent: 'center', alignItems: 'center' }}>
             <Text
-              className="text-zen-sage text-[11px] font-semibold"
-              style={{ color: '#4E7158' }}>
-              {displaySeconds}s
+              className="text-zen-charcoal font-semibold text-center tracking-tight"
+              style={{
+                fontFamily: 'serif',
+                fontSize: 22,
+                color: '#222522',
+              }}>
+              {currentLabel}
             </Text>
           </View>
+
+          {/* Sub-cue guiding text (Fixed Height Container: Zero Shifting) */}
+          <View style={{ height: 18, justifyContent: 'center', alignItems: 'center', marginTop: 2 }}>
+            <Text
+              className="text-zen-muted text-[11px] font-normal text-center"
+              style={{ color: '#657267' }}>
+              {currentSubCue}
+            </Text>
+          </View>
+
+          {/* Countdown timer badge (Fixed Placement) */}
+          <View style={{ height: 26, justifyContent: 'center', alignItems: 'center', marginTop: 4 }}>
+            <View className="px-2.5 py-0.5 rounded-full bg-zen-sage/10 border border-zen-sage/20 items-center justify-center">
+              <Text
+                className="text-zen-sage text-[11px] font-semibold"
+                style={{ color: '#4E7158' }}>
+                {displaySeconds}s
+              </Text>
+            </View>
+          </View>
         </Animated.View>
-      </Animated.View>
+      </View>
     </View>
   );
 }

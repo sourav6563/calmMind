@@ -45,7 +45,10 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="breathe/[technique]" />
-        <Stack.Screen name="breathe/session/[technique]" />
+        <Stack.Screen
+          name="breathe/session/[technique]"
+          options={{ gestureEnabled: false }}
+        />
         <Stack.Screen name="meditate/[practice]" />
         <Stack.Screen name="meditate/session/[practice]" />
         <Stack.Screen name="support" />
